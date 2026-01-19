@@ -1,0 +1,38 @@
+# Git
+.git
+.gitignore
+.github
+
+# Build outputs
+build/
+target/
+out/
+.gradle/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Docs
+docs/
+*.md
+!README.md
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test
+.vercel/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
