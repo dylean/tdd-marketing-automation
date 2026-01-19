@@ -23,22 +23,34 @@ FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
+# 安装 curl（用于健康检查）
+RUN apk add --no-cache curl
+
 # 添加非 root 用户
 RUN addgroup -S spring && adduser -S spring -G spring
-USER spring:spring
+
+# 创建日志目录
+RUN mkdir -p /app/logs && chown -R spring:spring /app
 
 # 从构建阶段复制 JAR 包
 COPY --from=builder /app/build/libs/*.jar app.jar
 
+# 修改文件权限
+RUN chown -R spring:spring /app
+
+# 切换到非 root 用户
+USER spring:spring
+
 # 健康检查
-HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD curl -f http://localhost:8080/actuator/health || exit 1
 
 # 暴露端口
 EXPOSE 8080
 
-# JVM 参数优化
-ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+UseG1GC"
+# 环境变量默认值（可通过 docker run -e 覆盖）
+ENV SPRING_PROFILES_ACTIVE=prod \
+    JAVA_OPTS="-Xmx512m -Xms256m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -Duser.timezone=Asia/Shanghai"
 
 # 启动应用
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

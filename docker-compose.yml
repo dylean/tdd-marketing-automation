@@ -1,0 +1,102 @@
+version: '3.8'
+
+services:
+  # MySQL 数据库
+  mysql:
+    image: mysql:8.0
+    container_name: tdd-ma-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root_password}
+      MYSQL_DATABASE: ${DB_NAME:-tdd_marketing_automation}
+      MYSQL_USER: ${DB_USERNAME:-tdd_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-user_password}
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - tdd-ma-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD:-root_password}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis 缓存
+  redis:
+    image: redis:7.0-alpine
+    container_name: tdd-ma-redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - tdd-ma-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 应用服务
+  app:
+    image: ${DOCKER_HUB_USERNAME:-your-username}/tdd-marketing-automation:latest
+    container_name: tdd-ma-app
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      # 数据库配置
+      DB_URL: mysql
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-tdd_marketing_automation}
+      DB_USERNAME: ${DB_USERNAME:-tdd_user}
+      DB_PASSWORD: ${DB_PASSWORD:-user_password}
+      
+      # Redis 配置
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      
+      # 外部服务配置
+      AUDIENCE_SERVICE_URL: ${AUDIENCE_SERVICE_URL:-http://audience-service:8081}
+      
+      # Spring Boot 配置
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      SERVER_PORT: 8080
+      
+      # JVM 参数
+      JAVA_OPTS: >-
+        -Xmx512m
+        -Xms256m
+        -XX:+UseG1GC
+        -XX:MaxGCPauseMillis=200
+        -Dfile.encoding=UTF-8
+        -Duser.timezone=Asia/Shanghai
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    networks:
+      - tdd-ma-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    volumes:
+      - app_logs:/app/logs
+
+networks:
+  tdd-ma-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+  app_logs:
+    driver: local
