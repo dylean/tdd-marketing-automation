@@ -45,32 +45,32 @@ echo -e "${BLUE}2. Secret 包含的配置项${NC}"
 kubectl get secret external-db-secret -n $NAMESPACE -o jsonpath='{.data}' | jq -r 'keys[]' 2>/dev/null || kubectl get secret external-db-secret -n $NAMESPACE -o json | grep -o '"[^"]*":' | tr -d '":' | grep -v "^metadata$\|^data$\|^type$"
 echo ""
 
-# 解码并显示配置（隐藏密码）
-echo -e "${BLUE}3. 当前配置值（密码已隐藏）${NC}"
+# 解码并显示配置（明文显示）
+echo -e "${BLUE}3. 当前配置值（明文）${NC}"
 echo ""
 
 MYSQL_HOST=$(kubectl get secret external-db-secret -n $NAMESPACE -o jsonpath='{.data.mysql-host}' | base64 -d)
 MYSQL_PORT=$(kubectl get secret external-db-secret -n $NAMESPACE -o jsonpath='{.data.mysql-port}' | base64 -d)
 MYSQL_DB=$(kubectl get secret external-db-secret -n $NAMESPACE -o jsonpath='{.data.mysql-database}' | base64 -d)
 MYSQL_USER=$(kubectl get secret external-db-secret -n $NAMESPACE -o jsonpath='{.data.mysql-username}' | base64 -d)
-MYSQL_PASS_LENGTH=$(kubectl get secret external-db-secret -n $NAMESPACE -o jsonpath='{.data.mysql-password}' | base64 -d | wc -c)
+MYSQL_PASS=$(kubectl get secret external-db-secret -n $NAMESPACE -o jsonpath='{.data.mysql-password}' | base64 -d)
 
 REDIS_HOST=$(kubectl get secret external-db-secret -n $NAMESPACE -o jsonpath='{.data.redis-host}' | base64 -d)
 REDIS_PORT=$(kubectl get secret external-db-secret -n $NAMESPACE -o jsonpath='{.data.redis-port}' | base64 -d)
-REDIS_PASS_LENGTH=$(kubectl get secret external-db-secret -n $NAMESPACE -o jsonpath='{.data.redis-password}' | base64 -d | wc -c)
+REDIS_PASS=$(kubectl get secret external-db-secret -n $NAMESPACE -o jsonpath='{.data.redis-password}' | base64 -d)
 
 echo "📊 MySQL 配置:"
 echo "   主机: $MYSQL_HOST"
 echo "   端口: $MYSQL_PORT"
 echo "   数据库: $MYSQL_DB"
 echo "   用户名: $MYSQL_USER"
-echo "   密码长度: ${MYSQL_PASS_LENGTH} 字符"
+echo "   密码: $MYSQL_PASS"
 echo ""
 
 echo "📊 Redis 配置:"
 echo "   主机: $REDIS_HOST"
 echo "   端口: $REDIS_PORT"
-echo "   密码长度: ${REDIS_PASS_LENGTH} 字符"
+echo "   密码: $REDIS_PASS"
 echo ""
 
 # 检查 Pod 环境变量
@@ -100,12 +100,16 @@ echo -e "${YELLOW}-- 2. 检查用户权限${NC}"
 echo "SHOW GRANTS FOR '$MYSQL_USER'@'%';"
 echo ""
 echo -e "${YELLOW}-- 3. 如果用户不存在或权限不足，创建/授权用户${NC}"
-echo "CREATE USER IF NOT EXISTS '$MYSQL_USER'@'%' IDENTIFIED BY 'your_password';"
+echo "CREATE USER IF NOT EXISTS '$MYSQL_USER'@'%' IDENTIFIED BY '$MYSQL_PASS';"
 echo "GRANT ALL PRIVILEGES ON $MYSQL_DB.* TO '$MYSQL_USER'@'%';"
 echo "FLUSH PRIVILEGES;"
 echo ""
 echo -e "${YELLOW}-- 4. 验证连接（从本地）${NC}"
+echo "mysql -h $MYSQL_HOST -P $MYSQL_PORT -u $MYSQL_USER -p'$MYSQL_PASS' $MYSQL_DB"
+echo ""
+echo -e "${YELLOW}-- 5. 或者手动输入密码${NC}"
 echo "mysql -h $MYSQL_HOST -P $MYSQL_PORT -u $MYSQL_USER -p $MYSQL_DB"
+echo "# 然后输入密码: $MYSQL_PASS"
 echo ""
 
 # 常见问题诊断
