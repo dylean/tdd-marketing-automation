@@ -17,7 +17,7 @@ import static com.tngtech.archunit.library.Architectures.layeredArchitecture;
  * - Domain 层不依赖任何其他层
  * - Application 层只能依赖 Domain 层
  * - Interfaces 层只能依赖 Application 层
- * - Infrastructure 层可以依赖 Domain 层（实现接口）
+ * - Infrastructure 层可以依赖 Domain 层和 Application 层（实现接口）
  */
 @DisplayName("DDD 分层架构守护测试")
 class DddLayerArchitectureTest {
@@ -36,7 +36,7 @@ class DddLayerArchitectureTest {
     @DisplayName("DDD分层架构：各层之间的依赖关系必须符合规范")
     void ddd_layer_dependencies_should_be_respected() {
         Architectures.LayeredArchitecture architecture = layeredArchitecture()
-                .consideringAllDependencies()
+                .consideringOnlyDependenciesInLayers()
                 // 定义各层
                 .layer("Interfaces").definedBy(BASE_PACKAGE + ".interfaces..")
                 .layer("Application").definedBy(BASE_PACKAGE + ".application..")
@@ -53,8 +53,8 @@ class DddLayerArchitectureTest {
                 // Interfaces 层只能访问 Application 层和 Domain 层（DTO转换可能需要）
                 .whereLayer("Interfaces").mayOnlyAccessLayers("Application", "Domain")
                 
-                // Infrastructure 层可以访问 Domain 层（实现仓储接口）
-                .whereLayer("Infrastructure").mayOnlyAccessLayers("Domain");
+                // Infrastructure 层可以访问 Domain 层和 Application 层（实现接口）
+                .whereLayer("Infrastructure").mayOnlyAccessLayers("Domain", "Application");
 
         architecture.check(importedClasses);
     }

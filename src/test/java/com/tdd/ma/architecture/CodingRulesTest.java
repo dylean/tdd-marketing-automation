@@ -59,7 +59,7 @@ class CodingRulesTest {
         ArchRule rule = noClasses()
                 .that().resideInAPackage("..domain..")
                 .and().haveSimpleNameNotEndingWith("Repository")
-                .should().beAnnotatedWith(lombok.Data.class)
+                .should().beAnnotatedWith("lombok.Data")
                 .because("领域实体应该保持封装性，不应该暴露所有setter");
 
         rule.check(importedClasses);

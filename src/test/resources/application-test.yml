@@ -1,10 +1,50 @@
 spring:
+  application:
+    name: tdd-marketing-automation-test
+  
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${TEST_DB_URL:localhost}:${TEST_DB_PORT:3306}/${TEST_DB:tdd_marketing_automation-test}?useUnicode=true&useSSL=false&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://${TEST_DB_URL:localhost}:${TEST_DB_PORT:3306}/${TEST_DB_NAME:tdd_marketing_automation_test}?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
     username: ${TEST_DB_USERNAME:root}
     password: ${TEST_DB_PASSWORD:root}
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: '0'
+    validate-on-migrate: true
+    clean-disabled: false
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 5000
 
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: auto
+
+# Feign 配置 - 测试环境使用 Mock
+feign:
+  client:
+    config:
+      default:
+        connectTimeout: 5000
+        readTimeout: 5000
+
+# 受众服务 URL（测试环境）
+audience:
+  service:
+    url: http://localhost:8081
+
+logging:
+  level:
+    com.tdd.ma: DEBUG
+    org.springframework.web: DEBUG
