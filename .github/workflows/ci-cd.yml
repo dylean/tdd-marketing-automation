@@ -217,28 +217,23 @@ jobs:
             kubectl create namespace tdd-ma
           fi
 
-      - name: 部署数据库（首次部署）
+      - name: 配置外部数据库连接（首次部署）
         run: |
-          # 检查 MySQL Secret 是否存在
-          if kubectl get secret mysql-secret -n tdd-ma > /dev/null 2>&1; then
-            echo "✅ 数据库 Secret 已存在，跳过数据库部署"
+          # 检查外部数据库 Secret 是否存在
+          if kubectl get secret external-db-secret -n tdd-ma > /dev/null 2>&1; then
+            echo "✅ 外部数据库 Secret 已存在，跳过配置"
           else
-            echo "📦 首次部署，创建数据库服务"
-            # 需要先设置密码
-            kubectl create secret generic mysql-secret -n tdd-ma \
-              --from-literal=username=root \
-              --from-literal=password=${{ secrets.MYSQL_PASSWORD }} \
-              --from-literal=root-password=${{ secrets.MYSQL_ROOT_PASSWORD }}
+            echo "📦 首次部署，配置外部数据库连接"
+            # 创建外部数据库连接 Secret
+            kubectl create secret generic external-db-secret -n tdd-ma \
+              --from-literal=mysql-url="${{ secrets.EXTERNAL_MYSQL_URL }}" \
+              --from-literal=mysql-username="${{ secrets.EXTERNAL_MYSQL_USERNAME }}" \
+              --from-literal=mysql-password="${{ secrets.EXTERNAL_MYSQL_PASSWORD }}" \
+              --from-literal=redis-host="${{ secrets.EXTERNAL_REDIS_HOST }}" \
+              --from-literal=redis-port="${{ secrets.EXTERNAL_REDIS_PORT }}" \
+              --from-literal=redis-password="${{ secrets.EXTERNAL_REDIS_PASSWORD }}"
             
-            kubectl create secret generic redis-secret -n tdd-ma \
-              --from-literal=password=${{ secrets.REDIS_PASSWORD }}
-            
-            # 部署数据库
-            kubectl apply -f sealos/database-deployment.yaml
-            
-            echo "⏳ 等待数据库就绪..."
-            kubectl wait --for=condition=ready pod -l app=mysql -n tdd-ma --timeout=300s
-            kubectl wait --for=condition=ready pod -l app=redis -n tdd-ma --timeout=300s
+            echo "✅ 外部数据库连接配置完成"
           fi
 
       - name: 部署应用

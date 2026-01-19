@@ -36,30 +36,39 @@ spec:
         - name: SPRING_PROFILES_ACTIVE
           value: "prod"
         
-        # MySQL 配置
+        # MySQL 配置（外部数据库）
         - name: SPRING_DATASOURCE_URL
-          value: "jdbc:mysql://$(MYSQL_SERVICE_HOST):$(MYSQL_SERVICE_PORT)/marketing_automation?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8"
+          valueFrom:
+            secretKeyRef:
+              name: external-db-secret
+              key: mysql-url
         - name: SPRING_DATASOURCE_USERNAME
           valueFrom:
             secretKeyRef:
-              name: mysql-secret
-              key: username
+              name: external-db-secret
+              key: mysql-username
         - name: SPRING_DATASOURCE_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: mysql-secret
-              key: password
+              name: external-db-secret
+              key: mysql-password
         
-        # Redis 配置
+        # Redis 配置（外部 Redis）
         - name: SPRING_DATA_REDIS_HOST
-          value: "$(REDIS_SERVICE_HOST)"
+          valueFrom:
+            secretKeyRef:
+              name: external-db-secret
+              key: redis-host
         - name: SPRING_DATA_REDIS_PORT
-          value: "$(REDIS_SERVICE_PORT)"
+          valueFrom:
+            secretKeyRef:
+              name: external-db-secret
+              key: redis-port
         - name: SPRING_DATA_REDIS_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: redis-secret
-              key: password
+              name: external-db-secret
+              key: redis-password
         
         # 外部服务配置
         - name: AUDIENCE_SERVICE_URL
