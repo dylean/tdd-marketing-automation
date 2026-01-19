@@ -246,11 +246,23 @@ jobs:
             echo "📦 首次部署，配置外部数据库连接"
             
             # 从 JDBC URL 中提取主机、端口、数据库名
-            # 格式: jdbc:mysql://host:port/database?params
+            # 支持格式:
+            #   jdbc:mysql://host:port/database?params
+            #   jdbc:mysql://user:password@host:port/database?params
             MYSQL_URL="${{ secrets.EXTERNAL_MYSQL_URL }}"
-            MYSQL_HOST=$(echo "$MYSQL_URL" | sed -n 's/.*:\/\/\([^:]*\).*/\1/p')
-            MYSQL_PORT=$(echo "$MYSQL_URL" | sed -n 's/.*:\([0-9]*\)\/.*/\1/p')
-            MYSQL_DB=$(echo "$MYSQL_URL" | sed -n 's/.*\/\([^?]*\).*/\1/p')
+            
+            # 移除 jdbc:mysql:// 前缀
+            MYSQL_URL_CLEAN=$(echo "$MYSQL_URL" | sed 's|jdbc:mysql://||')
+            
+            # 移除可能存在的 user:password@ 部分（如果有 @ 符号）
+            if [[ "$MYSQL_URL_CLEAN" == *"@"* ]]; then
+              MYSQL_URL_CLEAN=$(echo "$MYSQL_URL_CLEAN" | sed 's/^[^@]*@//')
+            fi
+            
+            # 提取 host, port, database
+            MYSQL_HOST=$(echo "$MYSQL_URL_CLEAN" | sed -n 's/^\([^:]*\):.*/\1/p')
+            MYSQL_PORT=$(echo "$MYSQL_URL_CLEAN" | sed -n 's/^[^:]*:\([0-9]*\)\/.*/\1/p')
+            MYSQL_DB=$(echo "$MYSQL_URL_CLEAN" | sed -n 's/^[^/]*\/\([^?]*\).*/\1/p')
             
             echo "📋 MySQL 配置:"
             echo "  主机: $MYSQL_HOST"
