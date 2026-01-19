@@ -467,6 +467,32 @@ Sealos 提供了内置的监控面板：
 
 ## 🔧 故障排查
 
+### 🛠️ 快速诊断工具
+
+我们提供了一个自动诊断脚本，可以快速检查部署状态和常见问题：
+
+```bash
+# 自动检测 namespace
+./scripts/diagnose-sealos-deployment.sh
+
+# 或指定 namespace
+./scripts/diagnose-sealos-deployment.sh ns-l34pu8d4
+```
+
+**诊断脚本功能**：
+- ✅ 检查 Namespace、Deployment、Pod、Service、Ingress 状态
+- ✅ 显示 Pod 详细日志（最近100行）
+- ✅ 显示最近的 Kubernetes Events
+- ✅ 自动诊断常见问题（镜像拉取失败、健康检查失败等）
+- ✅ 提供快速操作命令
+
+**推荐使用场景**：
+- 部署后验证状态
+- 部署失败时快速定位问题
+- 定期检查应用健康状态
+
+---
+
 ### 问题 1：Pod 一直处于 Pending 状态
 
 **原因**：资源不足或 PVC 无法绑定
