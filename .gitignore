@@ -28,6 +28,10 @@ build/
 .gradle/
 !gradle/wrapper/gradle-wrapper.jar
 
+# Code Quality Reports  
+build/reports/checkstyle/
+build/reports/spotbugs/
+
 # IDE
 .idea/
 *.iml

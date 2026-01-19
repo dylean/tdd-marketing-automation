@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [ main, develop ]
 
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
 jobs:
   build-and-test:
     name: 构建和测试
@@ -50,7 +55,7 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: 编译项目
-        run: ./gradlew compileJava compileTestJava --no-daemon
+        run: ./gradlew clean compileJava compileTestJava --no-daemon
 
       - name: 运行单元测试和架构测试
         run: ./gradlew test --no-daemon --tests "com.tdd.ma.domain.*" --tests "com.tdd.ma.application.*" --tests "com.tdd.ma.architecture.*"
@@ -111,11 +116,8 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      - name: 运行架构守护测试
-        run: ./gradlew test --no-daemon --tests "com.tdd.ma.architecture.*"
-
-      - name: 检查代码风格
-        run: ./gradlew check --no-daemon
+      - name: 代码质量检查（跳过测试）
+        run: ./gradlew check -x test --no-daemon
         continue-on-error: true
 
   build-status:

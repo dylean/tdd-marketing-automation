@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!-- 排除生成的代码 -->
+    <Match>
+        <Package name="~.*\.generated\..*"/>
+    </Match>
+
+    <!-- 排除测试代码的某些检查 -->
+    <Match>
+        <Class name="~.*Test"/>
+        <Bug pattern="RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT"/>
+    </Match>
+
+    <!-- 排除 Lombok 生成的代码 -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP"/>
+        <Class name="~.*\.(domain|dto)\..*"/>
+    </Match>
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+        <Class name="~.*\.(domain|dto)\..*"/>
+    </Match>
+
+    <!-- 排除 Spring 自动配置相关 -->
+    <Match>
+        <Bug pattern="SE_BAD_FIELD"/>
+        <Class name="~.*Configuration"/>
+    </Match>
+
+    <!-- 排除序列化相关警告（DTO 和实体类） -->
+    <Match>
+        <Bug pattern="SE_NO_SERIALVERSIONID"/>
+    </Match>
+
+    <!-- 排除 Record 类的警告 -->
+    <Match>
+        <Bug pattern="EQ_DOESNT_OVERRIDE_EQUALS"/>
+        <Class name="~.*Record"/>
+    </Match>
+</FindBugsFilter>
