@@ -106,7 +106,7 @@ kubectl logs -f deployment/tdd-marketing-automation -n tdd-ma
 | Secret 名称 | 示例值 | 说明 |
 |------------|--------|------|
 | `EXTERNAL_MYSQL_URL` | `jdbc:mysql://mysql.example.com:3306/marketing_automation?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8` | MySQL JDBC URL |
-| `EXTERNAL_MYSQL_USERNAME` | `root` | MySQL 用户名 |
+| `s` | `root` | MySQL 用户名 |
 | `EXTERNAL_MYSQL_PASSWORD` | `YourPassword123!` | MySQL 密码 |
 | `EXTERNAL_REDIS_HOST` | `redis.example.com` | Redis 主机地址 |
 | `EXTERNAL_REDIS_PORT` | `6379` | Redis 端口 |

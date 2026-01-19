@@ -37,34 +37,45 @@ spec:
           value: "prod"
         
         # MySQL 配置（外部数据库）
-        - name: SPRING_DATASOURCE_URL
+        # 注意：环境变量名称需要与 application.yml 中的占位符匹配
+        - name: DB_URL
           valueFrom:
             secretKeyRef:
               name: external-db-secret
-              key: mysql-url
-        - name: SPRING_DATASOURCE_USERNAME
+              key: mysql-host
+        - name: DB_PORT
+          valueFrom:
+            secretKeyRef:
+              name: external-db-secret
+              key: mysql-port
+        - name: DB_NAME
+          valueFrom:
+            secretKeyRef:
+              name: external-db-secret
+              key: mysql-database
+        - name: DB_USERNAME
           valueFrom:
             secretKeyRef:
               name: external-db-secret
               key: mysql-username
-        - name: SPRING_DATASOURCE_PASSWORD
+        - name: DB_PASSWORD
           valueFrom:
             secretKeyRef:
               name: external-db-secret
               key: mysql-password
         
         # Redis 配置（外部 Redis）
-        - name: SPRING_DATA_REDIS_HOST
+        - name: REDIS_HOST
           valueFrom:
             secretKeyRef:
               name: external-db-secret
               key: redis-host
-        - name: SPRING_DATA_REDIS_PORT
+        - name: REDIS_PORT
           valueFrom:
             secretKeyRef:
               name: external-db-secret
               key: redis-port
-        - name: SPRING_DATA_REDIS_PASSWORD
+        - name: REDIS_PASSWORD
           valueFrom:
             secretKeyRef:
               name: external-db-secret

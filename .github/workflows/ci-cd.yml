@@ -244,9 +244,24 @@ jobs:
             echo "✅ 外部数据库 Secret 已存在，跳过配置"
           else
             echo "📦 首次部署，配置外部数据库连接"
+            
+            # 从 JDBC URL 中提取主机、端口、数据库名
+            # 格式: jdbc:mysql://host:port/database?params
+            MYSQL_URL="${{ secrets.EXTERNAL_MYSQL_URL }}"
+            MYSQL_HOST=$(echo "$MYSQL_URL" | sed -n 's/.*:\/\/\([^:]*\).*/\1/p')
+            MYSQL_PORT=$(echo "$MYSQL_URL" | sed -n 's/.*:\([0-9]*\)\/.*/\1/p')
+            MYSQL_DB=$(echo "$MYSQL_URL" | sed -n 's/.*\/\([^?]*\).*/\1/p')
+            
+            echo "📋 MySQL 配置:"
+            echo "  主机: $MYSQL_HOST"
+            echo "  端口: $MYSQL_PORT"
+            echo "  数据库: $MYSQL_DB"
+            
             # 创建外部数据库连接 Secret
             kubectl create secret generic external-db-secret -n ${{ env.SEALOS_NAMESPACE }} \
-              --from-literal=mysql-url="${{ secrets.EXTERNAL_MYSQL_URL }}" \
+              --from-literal=mysql-host="$MYSQL_HOST" \
+              --from-literal=mysql-port="$MYSQL_PORT" \
+              --from-literal=mysql-database="$MYSQL_DB" \
               --from-literal=mysql-username="${{ secrets.EXTERNAL_MYSQL_USERNAME }}" \
               --from-literal=mysql-password="${{ secrets.EXTERNAL_MYSQL_PASSWORD }}" \
               --from-literal=redis-host="${{ secrets.EXTERNAL_REDIS_HOST }}" \
