@@ -163,7 +163,7 @@ jdbc:mysql://主机地址:端口/数据库名?参数
 
 **完整示例**：
 ```
-jdbc:mysql://mysql.example.com:3306/marketing_automation?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8
+jdbc:mysql://mwtp6j6s@dean-db-mysql.ns-l34pu8d4.svc:3306/marketing_automation?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8
 ```
 
 **参数说明**：

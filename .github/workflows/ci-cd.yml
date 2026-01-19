@@ -208,13 +208,20 @@ jobs:
           echo "📋 应用部署配置:"
           cat sealos/app-deployment.yaml | grep "image:"
 
-      - name: 检查 namespace 是否存在
+      - name: 验证 namespace 存在
         run: |
           if kubectl get namespace tdd-ma > /dev/null 2>&1; then
             echo "✅ Namespace tdd-ma 已存在"
           else
-            echo "📦 创建 namespace tdd-ma"
-            kubectl create namespace tdd-ma
+            echo "❌ 错误: Namespace tdd-ma 不存在！"
+            echo "请先在 Sealos 控制台创建 namespace:"
+            echo "1. 登录 https://cloud.sealos.io"
+            echo "2. 在左侧菜单选择「应用管理」"
+            echo "3. 创建应用时会自动使用你的 namespace"
+            echo ""
+            echo "或者使用你的默认 namespace（通常是你的用户 ID）"
+            echo "修改部署配置中的 namespace 为你的实际 namespace"
+            exit 1
           fi
 
       - name: 配置外部数据库连接（首次部署）
