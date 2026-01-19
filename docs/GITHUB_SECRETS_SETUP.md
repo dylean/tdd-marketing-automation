@@ -6,19 +6,21 @@
 
 ## 📋 Secrets 清单
 
-项目需要配置 **9 个 GitHub Secrets**：
+项目需要配置 **10 个 GitHub Secrets**：
 
 | # | Secret 名称 | 用途 | 必需 |
 |---|------------|------|------|
 | 1 | `DOCKER_HUB_USERNAME` | Docker Hub 用户名 | ✅ |
 | 2 | `DOCKER_HUB_TOKEN` | Docker Hub 访问令牌 | ✅ |
 | 3 | `SEALOS_KUBECONFIG` | Sealos 集群连接配置 | ✅ |
-| 4 | `EXTERNAL_MYSQL_URL` | MySQL JDBC URL | ✅ |
-| 5 | `EXTERNAL_MYSQL_USERNAME` | MySQL 用户名 | ✅ |
-| 6 | `EXTERNAL_MYSQL_PASSWORD` | MySQL 密码 | ✅ |
-| 7 | `EXTERNAL_REDIS_HOST` | Redis 主机地址 | ✅ |
-| 8 | `EXTERNAL_REDIS_PORT` | Redis 端口 | ✅ |
-| 9 | `EXTERNAL_REDIS_PASSWORD` | Redis 密码 | ✅ |
+| 4 | `EXTERNAL_MYSQL_HOST` | MySQL 主机地址 | ✅ |
+| 5 | `EXTERNAL_MYSQL_PORT` | MySQL 端口 | ✅ |
+| 6 | `EXTERNAL_MYSQL_DATABASE` | MySQL 数据库名 | ✅ |
+| 7 | `EXTERNAL_MYSQL_USERNAME` | MySQL 用户名 | ✅ |
+| 8 | `EXTERNAL_MYSQL_PASSWORD` | MySQL 密码 | ✅ |
+| 9 | `EXTERNAL_REDIS_HOST` | Redis 主机地址 | ✅ |
+| 10 | `EXTERNAL_REDIS_PORT` | Redis 端口 | ✅ |
+| 11 | `EXTERNAL_REDIS_PASSWORD` | Redis 密码 | ✅ |
 
 ---
 
@@ -152,7 +154,62 @@ YXBpVmVyc2lvbjogdjEKY2x1c3RlcnM6Ci0gY2x1c3Rlcj...（很长的字符串）
 
 ---
 
-### 4. EXTERNAL_MYSQL_URL
+### 4. EXTERNAL_MYSQL_HOST
+
+**说明**：MySQL 数据库的主机地址
+
+**示例值**：
+```
+# Sealos 内部服务
+dean-db-mysql.ns-l34pu8d4.svc
+
+# 或外部 IP
+47.xxx.xxx.xxx
+```
+
+**配置步骤**：
+1. 点击 **New repository secret**
+2. **Name**: `EXTERNAL_MYSQL_HOST`
+3. **Secret**: 输入 MySQL 主机地址
+4. 点击 **Add secret**
+
+---
+
+### 5. EXTERNAL_MYSQL_PORT
+
+**说明**：MySQL 数据库的端口号
+
+**示例值**：
+```
+3306
+```
+
+**配置步骤**：
+1. 点击 **New repository secret**
+2. **Name**: `EXTERNAL_MYSQL_PORT`
+3. **Secret**: `3306`
+4. 点击 **Add secret**
+
+---
+
+### 6. EXTERNAL_MYSQL_DATABASE
+
+**说明**：MySQL 数据库名称
+
+**示例值**：
+```
+marketing_automation
+```
+
+**配置步骤**：
+1. 点击 **New repository secret**
+2. **Name**: `EXTERNAL_MYSQL_DATABASE`
+3. **Secret**: 输入数据库名称
+4. 点击 **Add secret**
+
+---
+
+### 7. EXTERNAL_MYSQL_USERNAME
 
 **说明**：MySQL 数据库的完整 JDBC 连接 URL
 
