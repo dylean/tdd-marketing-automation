@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: mysql-secret
-  namespace: ns-l34pu8d4
+  namespace: tdd-ma
 type: Opaque
 stringData:
   username: "root"
@@ -13,7 +13,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: redis-secret
-  namespace: ns-l34pu8d4
+  namespace: tdd-ma
 type: Opaque
 stringData:
   password: "CHANGE_ME_REDIS_PASSWORD"  # 修改为实际密码
@@ -22,7 +22,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: mysql-pvc
-  namespace: ns-l34pu8d4
+  namespace: tdd-ma
 spec:
   accessModes:
     - ReadWriteOnce
@@ -35,7 +35,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mysql
-  namespace: ns-l34pu8d4
+  namespace: tdd-ma
   labels:
     app: mysql
 spec:
@@ -120,7 +120,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: mysql-service
-  namespace: ns-l34pu8d4
+  namespace: tdd-ma
   labels:
     app: mysql
 spec:
@@ -137,7 +137,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: redis
-  namespace: ns-l34pu8d4
+  namespace: tdd-ma
   labels:
     app: redis
 spec:
@@ -207,7 +207,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: redis-service
-  namespace: ns-l34pu8d4
+  namespace: tdd-ma
   labels:
     app: redis
 spec:

@@ -166,8 +166,8 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ secrets.DOCKER_HUB_USERNAME }}/ns-l34pu8d4rketing-automation:${{ steps.version.outputs.version }}
-            ${{ secrets.DOCKER_HUB_USERNAME }}/ns-l34pu8d4rketing-automation:latest
+            ${{ secrets.DOCKER_HUB_USERNAME }}/tdd-marketing-automation:${{ steps.version.outputs.version }}
+            ${{ secrets.DOCKER_HUB_USERNAME }}/tdd-marketing-automation:latest
 
       - name: 镜像推送成功通知
         if: success()
@@ -175,8 +175,8 @@ jobs:
           echo "✅ Docker 镜像已推送成功！"
           echo ""
           echo "📦 镜像标签:"
-          echo "   ${{ secrets.DOCKER_HUB_USERNAME }}/ns-l34pu8d4rketing-automation:${{ steps.version.outputs.version }}"
-          echo "   ${{ secrets.DOCKER_HUB_USERNAME }}/ns-l34pu8d4rketing-automation:latest"
+          echo "   ${{ secrets.DOCKER_HUB_USERNAME }}/tdd-marketing-automation:${{ steps.version.outputs.version }}"
+          echo "   ${{ secrets.DOCKER_HUB_USERNAME }}/tdd-marketing-automation:latest"
 
   deploy-sealos:
     name: ☁️ 部署到 Sealos
@@ -226,9 +226,9 @@ jobs:
           # 替换 Docker Hub 用户名
           sed -i "s/\${DOCKER_HUB_USERNAME}/${{ secrets.DOCKER_HUB_USERNAME }}/g" sealos/app-deployment.yaml
           
-          # 替换 namespace（如果配置文件中是 ns-l34pu8d4）
-          sed -i "s/namespace: ns-l34pu8d4/namespace: ${{ env.SEALOS_NAMESPACE }}/g" sealos/app-deployment.yaml
-          sed -i "s/-n ns-l34pu8d4/-n ${{ env.SEALOS_NAMESPACE }}/g" sealos/app-deployment.yaml
+          # 替换 namespace（如果配置文件中是 tdd-ma）
+          sed -i "s/namespace: tdd-ma/namespace: ${{ env.SEALOS_NAMESPACE }}/g" sealos/app-deployment.yaml
+          sed -i "s/-n tdd-ma/-n ${{ env.SEALOS_NAMESPACE }}/g" sealos/app-deployment.yaml
           
           # 删除 Namespace 定义（Sealos 不允许创建 namespace）
           sed -i '/^---$/,/^---$/{ /kind: Namespace/,/^---$/d; }' sealos/app-deployment.yaml || true
@@ -262,13 +262,13 @@ jobs:
           kubectl apply -f sealos/app-deployment.yaml
           
           echo "⏳ 等待部署完成..."
-          kubectl rollout status deployment/ns-l34pu8d4rketing-automation -n ${{ env.SEALOS_NAMESPACE }} --timeout=300s
+          kubectl rollout status deployment/tdd-marketing-automation -n ${{ env.SEALOS_NAMESPACE }} --timeout=300s
 
       - name: 重启应用（拉取最新镜像）
         run: |
           echo "🔄 重启应用以拉取最新镜像..."
-          kubectl rollout restart deployment/ns-l34pu8d4rketing-automation -n ${{ env.SEALOS_NAMESPACE }}
-          kubectl rollout status deployment/ns-l34pu8d4rketing-automation -n ${{ env.SEALOS_NAMESPACE }} --timeout=300s
+          kubectl rollout restart deployment/tdd-marketing-automation -n ${{ env.SEALOS_NAMESPACE }}
+          kubectl rollout status deployment/tdd-marketing-automation -n ${{ env.SEALOS_NAMESPACE }} --timeout=300s
 
       - name: 获取部署状态
         if: always()
@@ -298,7 +298,7 @@ jobs:
           echo "========================================"
           echo "📍 Namespace: ${{ env.SEALOS_NAMESPACE }}"
           echo ""
-          INGRESS_HOST=$(kubectl get ingress ns-l34pu8d4-ingress -n ${{ env.SEALOS_NAMESPACE }} -o jsonpath='{.spec.rules[0].host}' 2>/dev/null || echo "未配置 Ingress")
+          INGRESS_HOST=$(kubectl get ingress tdd-ma-ingress -n ${{ env.SEALOS_NAMESPACE }} -o jsonpath='{.spec.rules[0].host}' 2>/dev/null || echo "未配置 Ingress")
           if [ "$INGRESS_HOST" != "未配置 Ingress" ]; then
             echo "🌐 应用访问地址: https://${INGRESS_HOST}"
           else
@@ -306,7 +306,7 @@ jobs:
           fi
           echo ""
           echo "📋 查看应用日志:"
-          echo "   kubectl logs -f deployment/ns-l34pu8d4rketing-automation -n ${{ env.SEALOS_NAMESPACE }}"
+          echo "   kubectl logs -f deployment/tdd-marketing-automation -n ${{ env.SEALOS_NAMESPACE }}"
           echo ""
           echo "🔍 查看 Pod 状态:"
           echo "   kubectl get pods -n ${{ env.SEALOS_NAMESPACE }}"
@@ -315,10 +315,10 @@ jobs:
         if: failure()
         run: |
           echo "❌ 部署失败，执行回滚..."
-          kubectl rollout undo deployment/ns-l34pu8d4rketing-automation -n ${{ env.SEALOS_NAMESPACE }} || true
+          kubectl rollout undo deployment/tdd-marketing-automation -n ${{ env.SEALOS_NAMESPACE }} || true
           
           echo "📋 最近的 Pod 日志:"
-          kubectl logs -l app=ns-l34pu8d4 -n ${{ env.SEALOS_NAMESPACE }} --tail=50 || true
+          kubectl logs -l app=tdd-ma -n ${{ env.SEALOS_NAMESPACE }} --tail=50 || true
 
   # ===== 流水线状态汇总 =====
   pipeline-status:

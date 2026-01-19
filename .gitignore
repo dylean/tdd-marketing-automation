@@ -38,6 +38,9 @@ sealos/secrets.yaml
 sealos/external-db-secret.yaml
 sealos/.kubeconfig
 
+# 配置备份
+.backup-*/
+
 # Code Quality Reports  
 build/reports/checkstyle/
 build/reports/spotbugs/
