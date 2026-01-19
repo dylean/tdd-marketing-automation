@@ -1,0 +1,177 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tdd-ma
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tdd-marketing-automation
+  namespace: tdd-ma
+  labels:
+    app: tdd-ma
+    version: v1
+spec:
+  replicas: 2  # 两个实例，高可用
+  selector:
+    matchLabels:
+      app: tdd-ma
+  template:
+    metadata:
+      labels:
+        app: tdd-ma
+        version: v1
+    spec:
+      containers:
+      - name: app
+        image: ${DOCKER_HUB_USERNAME}/tdd-marketing-automation:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        
+        # 环境变量配置
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "prod"
+        
+        # MySQL 配置
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:mysql://$(MYSQL_SERVICE_HOST):$(MYSQL_SERVICE_PORT)/marketing_automation?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8"
+        - name: SPRING_DATASOURCE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: username
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: password
+        
+        # Redis 配置
+        - name: SPRING_DATA_REDIS_HOST
+          value: "$(REDIS_SERVICE_HOST)"
+        - name: SPRING_DATA_REDIS_PORT
+          value: "$(REDIS_SERVICE_PORT)"
+        - name: SPRING_DATA_REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: redis-secret
+              key: password
+        
+        # 外部服务配置
+        - name: AUDIENCE_SERVICE_URL
+          value: "https://api.example.com"
+        
+        # JVM 参数
+        - name: JAVA_OPTS
+          value: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+UseG1GC -Xms512m -Xmx1024m"
+        
+        # 资源限制
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        
+        # 健康检查
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+        
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        
+        # 优雅关闭
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "sleep 10"]
+      
+      # 重启策略
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tdd-ma-service
+  namespace: tdd-ma
+  labels:
+    app: tdd-ma
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  selector:
+    app: tdd-ma
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tdd-ma-ingress
+  namespace: tdd-ma
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+spec:
+  tls:
+  - hosts:
+    - tdd-ma.example.com  # 替换为你的域名
+    secretName: tdd-ma-tls
+  rules:
+  - host: tdd-ma.example.com  # 替换为你的域名
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: tdd-ma-service
+            port:
+              number: 8080
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: tdd-ma-hpa
+  namespace: tdd-ma
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: tdd-marketing-automation
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80

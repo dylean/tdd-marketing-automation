@@ -124,8 +124,8 @@ jobs:
         continue-on-error: true
 
   # ===== CD 阶段 =====
-  deploy:
-    name: 🚀 构建并推送 Docker 镜像
+  deploy-docker:
+    name: 🐳 构建并推送 Docker 镜像
     runs-on: ubuntu-latest
     needs: [build-and-test, code-quality]  # 依赖 CI 阶段
     if: success()  # 只有 CI 全部成功才执行
@@ -169,24 +169,141 @@ jobs:
             ${{ secrets.DOCKER_HUB_USERNAME }}/tdd-marketing-automation:${{ steps.version.outputs.version }}
             ${{ secrets.DOCKER_HUB_USERNAME }}/tdd-marketing-automation:latest
 
-      - name: 部署成功通知
+      - name: 镜像推送成功通知
         if: success()
         run: |
-          echo "✅ CI/CD 流水线执行成功！"
+          echo "✅ Docker 镜像已推送成功！"
           echo ""
-          echo "📦 Docker 镜像已推送到 Docker Hub:"
+          echo "📦 镜像标签:"
           echo "   ${{ secrets.DOCKER_HUB_USERNAME }}/tdd-marketing-automation:${{ steps.version.outputs.version }}"
           echo "   ${{ secrets.DOCKER_HUB_USERNAME }}/tdd-marketing-automation:latest"
+
+  deploy-sealos:
+    name: ☁️ 部署到 Sealos
+    runs-on: ubuntu-latest
+    needs: deploy-docker  # 依赖 Docker 镜像推送成功
+    if: success()
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.28.0'
+
+      - name: 配置 Sealos kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.SEALOS_KUBECONFIG }}" | base64 -d > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+
+      - name: 替换部署配置中的环境变量
+        run: |
+          # 替换 Docker Hub 用户名
+          sed -i "s/\${DOCKER_HUB_USERNAME}/${{ secrets.DOCKER_HUB_USERNAME }}/g" sealos/app-deployment.yaml
+          
+          # 显示将要部署的配置（用于调试）
+          echo "📋 应用部署配置:"
+          cat sealos/app-deployment.yaml | grep "image:"
+
+      - name: 检查 namespace 是否存在
+        run: |
+          if kubectl get namespace tdd-ma > /dev/null 2>&1; then
+            echo "✅ Namespace tdd-ma 已存在"
+          else
+            echo "📦 创建 namespace tdd-ma"
+            kubectl create namespace tdd-ma
+          fi
+
+      - name: 部署数据库（首次部署）
+        run: |
+          # 检查 MySQL Secret 是否存在
+          if kubectl get secret mysql-secret -n tdd-ma > /dev/null 2>&1; then
+            echo "✅ 数据库 Secret 已存在，跳过数据库部署"
+          else
+            echo "📦 首次部署，创建数据库服务"
+            # 需要先设置密码
+            kubectl create secret generic mysql-secret -n tdd-ma \
+              --from-literal=username=root \
+              --from-literal=password=${{ secrets.MYSQL_PASSWORD }} \
+              --from-literal=root-password=${{ secrets.MYSQL_ROOT_PASSWORD }}
+            
+            kubectl create secret generic redis-secret -n tdd-ma \
+              --from-literal=password=${{ secrets.REDIS_PASSWORD }}
+            
+            # 部署数据库
+            kubectl apply -f sealos/database-deployment.yaml
+            
+            echo "⏳ 等待数据库就绪..."
+            kubectl wait --for=condition=ready pod -l app=mysql -n tdd-ma --timeout=300s
+            kubectl wait --for=condition=ready pod -l app=redis -n tdd-ma --timeout=300s
+          fi
+
+      - name: 部署应用
+        run: |
+          echo "🚀 部署应用到 Sealos..."
+          kubectl apply -f sealos/app-deployment.yaml
+          
+          echo "⏳ 等待部署完成..."
+          kubectl rollout status deployment/tdd-marketing-automation -n tdd-ma --timeout=300s
+
+      - name: 重启应用（拉取最新镜像）
+        run: |
+          echo "🔄 重启应用以拉取最新镜像..."
+          kubectl rollout restart deployment/tdd-marketing-automation -n tdd-ma
+          kubectl rollout status deployment/tdd-marketing-automation -n tdd-ma --timeout=300s
+
+      - name: 获取部署状态
+        if: always()
+        run: |
+          echo "========================================"
+          echo "         Sealos 部署状态"
+          echo "========================================"
           echo ""
-          echo "🚀 使用以下命令拉取并运行:"
-          echo "   docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/tdd-marketing-automation:latest"
-          echo "   docker-compose up -d"
+          echo "📦 Pods 状态:"
+          kubectl get pods -n tdd-ma
+          echo ""
+          echo "🌐 Services 状态:"
+          kubectl get services -n tdd-ma
+          echo ""
+          echo "🔗 Ingress 状态:"
+          kubectl get ingress -n tdd-ma
+          echo ""
+          echo "📊 HPA 状态:"
+          kubectl get hpa -n tdd-ma
+
+      - name: 获取访问地址
+        if: success()
+        run: |
+          echo "========================================"
+          echo "         🎉 部署成功！"
+          echo "========================================"
+          echo ""
+          INGRESS_HOST=$(kubectl get ingress tdd-ma-ingress -n tdd-ma -o jsonpath='{.spec.rules[0].host}')
+          echo "🌐 应用访问地址: https://${INGRESS_HOST}"
+          echo ""
+          echo "📋 查看应用日志:"
+          echo "   kubectl logs -f deployment/tdd-marketing-automation -n tdd-ma"
+          echo ""
+          echo "🔍 查看 Pod 状态:"
+          echo "   kubectl get pods -n tdd-ma"
+
+      - name: 部署失败回滚
+        if: failure()
+        run: |
+          echo "❌ 部署失败，执行回滚..."
+          kubectl rollout undo deployment/tdd-marketing-automation -n tdd-ma || true
+          
+          echo "📋 最近的 Pod 日志:"
+          kubectl logs -l app=tdd-ma -n tdd-ma --tail=50 || true
 
   # ===== 流水线状态汇总 =====
   pipeline-status:
     name: 📋 流水线状态
     runs-on: ubuntu-latest
-    needs: [build-and-test, code-quality, deploy]
+    needs: [build-and-test, code-quality, deploy-docker, deploy-sealos]
     if: always()
 
     steps:
@@ -197,15 +314,20 @@ jobs:
           echo "========================================"
           echo "🧪 构建和测试: ${{ needs.build-and-test.result }}"
           echo "📊 代码质量检查: ${{ needs.code-quality.result }}"
-          echo "🚀 Docker 部署: ${{ needs.deploy.result }}"
+          echo "🐳 Docker 镜像推送: ${{ needs.deploy-docker.result }}"
+          echo "☁️  Sealos 部署: ${{ needs.deploy-sealos.result }}"
           echo "========================================"
           
           if [ "${{ needs.build-and-test.result }}" == "success" ] && \
              [ "${{ needs.code-quality.result }}" == "success" ] && \
-             [ "${{ needs.deploy.result }}" == "success" ]; then
+             [ "${{ needs.deploy-docker.result }}" == "success" ] && \
+             [ "${{ needs.deploy-sealos.result }}" == "success" ]; then
             echo "✅ 流水线全部成功！"
             exit 0
           else
             echo "❌ 流水线执行失败！"
+            if [ "${{ needs.deploy-sealos.result }}" != "success" ]; then
+              echo "⚠️  注意: Sealos 部署失败不影响 Docker 镜像"
+            fi
             exit 1
           fi

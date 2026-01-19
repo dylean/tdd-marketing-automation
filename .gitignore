@@ -33,6 +33,10 @@ build/
 .env.local
 docker-compose.override.yml
 
+# Sealos Secrets (敏感信息，不要提交)
+sealos/secrets.yaml
+sealos/.kubeconfig
+
 # Code Quality Reports  
 build/reports/checkstyle/
 build/reports/spotbugs/
