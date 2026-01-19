@@ -237,37 +237,40 @@ jobs:
           echo "📋 应用部署配置:"
           cat sealos/app-deployment.yaml | grep "image:\|namespace:"
 
-      - name: 配置外部数据库连接（首次部署）
+      - name: 配置外部数据库连接
         run: |
-          # 检查外部数据库 Secret 是否存在
+          echo "📦 配置外部数据库连接"
+          echo ""
+          echo "📋 MySQL 配置:"
+          echo "  主机: ${{ secrets.EXTERNAL_MYSQL_HOST }}"
+          echo "  端口: ${{ secrets.EXTERNAL_MYSQL_PORT }}"
+          echo "  数据库: ${{ secrets.EXTERNAL_MYSQL_DATABASE }}"
+          echo "  用户名: ${{ secrets.EXTERNAL_MYSQL_USERNAME }}"
+          echo ""
+          echo "📋 Redis 配置:"
+          echo "  主机: ${{ secrets.EXTERNAL_REDIS_HOST }}"
+          echo "  端口: ${{ secrets.EXTERNAL_REDIS_PORT }}"
+          echo ""
+          
+          # 删除旧 Secret（如果存在）
           if kubectl get secret external-db-secret -n ${{ env.SEALOS_NAMESPACE }} > /dev/null 2>&1; then
-            echo "✅ 外部数据库 Secret 已存在，跳过配置"
-          else
-            echo "📦 首次部署，配置外部数据库连接"
-            
-            echo "📋 MySQL 配置:"
-            echo "  主机: ${{ secrets.EXTERNAL_MYSQL_HOST }}"
-            echo "  端口: ${{ secrets.EXTERNAL_MYSQL_PORT }}"
-            echo "  数据库: ${{ secrets.EXTERNAL_MYSQL_DATABASE }}"
-            echo "  用户名: ${{ secrets.EXTERNAL_MYSQL_USERNAME }}"
-            echo ""
-            echo "📋 Redis 配置:"
-            echo "  主机: ${{ secrets.EXTERNAL_REDIS_HOST }}"
-            echo "  端口: ${{ secrets.EXTERNAL_REDIS_PORT }}"
-            
-            # 创建外部数据库连接 Secret
-            kubectl create secret generic external-db-secret -n ${{ env.SEALOS_NAMESPACE }} \
-              --from-literal=mysql-host="${{ secrets.EXTERNAL_MYSQL_HOST }}" \
-              --from-literal=mysql-port="${{ secrets.EXTERNAL_MYSQL_PORT }}" \
-              --from-literal=mysql-database="${{ secrets.EXTERNAL_MYSQL_DATABASE }}" \
-              --from-literal=mysql-username="${{ secrets.EXTERNAL_MYSQL_USERNAME }}" \
-              --from-literal=mysql-password="${{ secrets.EXTERNAL_MYSQL_PASSWORD }}" \
-              --from-literal=redis-host="${{ secrets.EXTERNAL_REDIS_HOST }}" \
-              --from-literal=redis-port="${{ secrets.EXTERNAL_REDIS_PORT }}" \
-              --from-literal=redis-password="${{ secrets.EXTERNAL_REDIS_PASSWORD }}"
-            
-            echo "✅ 外部数据库连接配置完成"
+            echo "🗑️  删除旧的 Secret..."
+            kubectl delete secret external-db-secret -n ${{ env.SEALOS_NAMESPACE }}
           fi
+          
+          # 创建新 Secret（每次都重新创建，确保使用最新配置）
+          echo "📦 创建新的 Secret..."
+          kubectl create secret generic external-db-secret -n ${{ env.SEALOS_NAMESPACE }} \
+            --from-literal=mysql-host="${{ secrets.EXTERNAL_MYSQL_HOST }}" \
+            --from-literal=mysql-port="${{ secrets.EXTERNAL_MYSQL_PORT }}" \
+            --from-literal=mysql-database="${{ secrets.EXTERNAL_MYSQL_DATABASE }}" \
+            --from-literal=mysql-username="${{ secrets.EXTERNAL_MYSQL_USERNAME }}" \
+            --from-literal=mysql-password="${{ secrets.EXTERNAL_MYSQL_PASSWORD }}" \
+            --from-literal=redis-host="${{ secrets.EXTERNAL_REDIS_HOST }}" \
+            --from-literal=redis-port="${{ secrets.EXTERNAL_REDIS_PORT }}" \
+            --from-literal=redis-password="${{ secrets.EXTERNAL_REDIS_PASSWORD }}"
+          
+          echo "✅ 外部数据库连接配置完成"
 
       - name: 验证部署配置
         run: |
