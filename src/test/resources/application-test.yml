@@ -1,7 +1,7 @@
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${TEST_DB_URL:localhost}:${TEST_DB_PORT:3306}/${TEST_DB:cm-community-service-test}?useUnicode=true&useSSL=false&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://${TEST_DB_URL:localhost}:${TEST_DB_PORT:3306}/${TEST_DB:tdd_marketing_automation-test}?useUnicode=true&useSSL=false&allowPublicKeyRetrieval=true
     username: ${TEST_DB_USERNAME:root}
     password: ${TEST_DB_PASSWORD:root}
 
