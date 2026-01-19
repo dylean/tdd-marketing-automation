@@ -271,19 +271,82 @@ jobs:
             echo "✅ 外部数据库连接配置完成"
           fi
 
+      - name: 验证部署配置
+        run: |
+          echo "🔍 验证部署配置..."
+          echo ""
+          
+          echo "✅ 检查 Secret 是否存在:"
+          kubectl get secret external-db-secret -n ${{ env.SEALOS_NAMESPACE }}
+          echo ""
+          
+          echo "✅ 验证部署文件语法:"
+          kubectl apply -f sealos/app-deployment.yaml --dry-run=client
+          echo ""
+          
+          echo "✅ Docker 镜像信息:"
+          echo "   镜像: ${{ secrets.DOCKER_HUB_USERNAME }}/tdd-marketing-automation:latest"
+          echo "   镜像拉取策略: Always"
+          echo ""
+          
+          echo "✅ 检查现有 Deployment:"
+          if kubectl get deployment tdd-marketing-automation -n ${{ env.SEALOS_NAMESPACE }} > /dev/null 2>&1; then
+            echo "   已存在，将进行更新"
+            kubectl get deployment tdd-marketing-automation -n ${{ env.SEALOS_NAMESPACE }} -o wide
+          else
+            echo "   不存在，将创建新的 Deployment"
+          fi
+
       - name: 部署应用
         run: |
           echo "🚀 部署应用到 Sealos (Namespace: ${{ env.SEALOS_NAMESPACE }})..."
           kubectl apply -f sealos/app-deployment.yaml
           
-          echo "⏳ 等待部署完成..."
-          kubectl rollout status deployment/tdd-marketing-automation -n ${{ env.SEALOS_NAMESPACE }} --timeout=300s
+          echo ""
+          echo "📋 当前 Deployment 配置:"
+          kubectl get deployment tdd-marketing-automation -n ${{ env.SEALOS_NAMESPACE }} -o wide || true
+          
+          echo ""
+          echo "⏳ 等待部署完成（超时时间：10分钟）..."
+          if ! kubectl rollout status deployment/tdd-marketing-automation -n ${{ env.SEALOS_NAMESPACE }} --timeout=600s; then
+            echo ""
+            echo "❌ 部署超时或失败，开始诊断..."
+            echo ""
+            echo "📦 Pod 状态:"
+            kubectl get pods -l app=tdd-ma -n ${{ env.SEALOS_NAMESPACE }}
+            echo ""
+            echo "📋 Pod 详细信息:"
+            kubectl describe pods -l app=tdd-ma -n ${{ env.SEALOS_NAMESPACE }}
+            echo ""
+            echo "📜 Pod 日志（最近100行）:"
+            kubectl logs -l app=tdd-ma -n ${{ env.SEALOS_NAMESPACE }} --tail=100 --all-containers=true || true
+            echo ""
+            echo "⚠️  Events（最近事件）:"
+            kubectl get events -n ${{ env.SEALOS_NAMESPACE }} --sort-by='.lastTimestamp' | tail -20
+            exit 1
+          fi
 
       - name: 重启应用（拉取最新镜像）
         run: |
           echo "🔄 重启应用以拉取最新镜像..."
           kubectl rollout restart deployment/tdd-marketing-automation -n ${{ env.SEALOS_NAMESPACE }}
-          kubectl rollout status deployment/tdd-marketing-automation -n ${{ env.SEALOS_NAMESPACE }} --timeout=300s
+          
+          echo ""
+          echo "⏳ 等待重启完成（超时时间：10分钟）..."
+          if ! kubectl rollout status deployment/tdd-marketing-automation -n ${{ env.SEALOS_NAMESPACE }} --timeout=600s; then
+            echo ""
+            echo "❌ 重启超时或失败，开始诊断..."
+            echo ""
+            echo "📦 Pod 状态:"
+            kubectl get pods -l app=tdd-ma -n ${{ env.SEALOS_NAMESPACE }}
+            echo ""
+            echo "📋 Pod 详细信息:"
+            kubectl describe pods -l app=tdd-ma -n ${{ env.SEALOS_NAMESPACE }}
+            echo ""
+            echo "📜 Pod 日志（最近100行）:"
+            kubectl logs -l app=tdd-ma -n ${{ env.SEALOS_NAMESPACE }} --tail=100 --all-containers=true || true
+            exit 1
+          fi
 
       - name: 获取部署状态
         if: always()
@@ -326,14 +389,42 @@ jobs:
           echo "🔍 查看 Pod 状态:"
           echo "   kubectl get pods -n ${{ env.SEALOS_NAMESPACE }}"
 
-      - name: 部署失败回滚
+      - name: 部署失败诊断
         if: failure()
         run: |
-          echo "❌ 部署失败，执行回滚..."
-          kubectl rollout undo deployment/tdd-marketing-automation -n ${{ env.SEALOS_NAMESPACE }} || true
+          echo "========================================"
+          echo "         🔍 部署失败诊断信息"
+          echo "========================================"
+          echo ""
           
-          echo "📋 最近的 Pod 日志:"
-          kubectl logs -l app=tdd-ma -n ${{ env.SEALOS_NAMESPACE }} --tail=50 || true
+          echo "📦 当前所有 Pod 状态:"
+          kubectl get pods -l app=tdd-ma -n ${{ env.SEALOS_NAMESPACE }} -o wide || true
+          echo ""
+          
+          echo "📋 Pod 详细描述（包含 Events）:"
+          kubectl describe pods -l app=tdd-ma -n ${{ env.SEALOS_NAMESPACE }} || true
+          echo ""
+          
+          echo "📜 所有容器日志（最近200行）:"
+          for pod in $(kubectl get pods -l app=tdd-ma -n ${{ env.SEALOS_NAMESPACE }} -o jsonpath='{.items[*].metadata.name}'); do
+            echo "--- Pod: $pod ---"
+            kubectl logs $pod -n ${{ env.SEALOS_NAMESPACE }} --tail=200 --all-containers=true || true
+            echo ""
+          done
+          
+          echo "⚠️  Namespace 最近事件:"
+          kubectl get events -n ${{ env.SEALOS_NAMESPACE }} --sort-by='.lastTimestamp' | tail -30 || true
+          echo ""
+          
+          echo "🔄 尝试回滚到上一个版本..."
+          kubectl rollout undo deployment/tdd-marketing-automation -n ${{ env.SEALOS_NAMESPACE }} || true
+          echo ""
+          
+          echo "💡 常见问题排查:"
+          echo "  1. 镜像拉取失败 - 检查 Docker Hub 凭证和镜像名称"
+          echo "  2. 健康检查失败 - 检查应用启动日志和配置"
+          echo "  3. 资源不足 - 检查 Namespace 资源配额"
+          echo "  4. 配置错误 - 检查环境变量和 Secret 配置"
 
   # ===== 流水线状态汇总 =====
   pipeline-status:
