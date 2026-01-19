@@ -21,10 +21,10 @@
 
 | 文档 | 路径 | 说明 |
 |------|------|------|
-| **快速指南** | [docs/sealos/QUICK_START_EXTERNAL_DB.md](../docs/sealos/QUICK_START_EXTERNAL_DB.md) | 5 分钟快速部署（外部数据库） |
-| **完整配置** | [docs/sealos/EXTERNAL_DB_SETUP.md](../docs/sealos/EXTERNAL_DB_SETUP.md) | 外部数据库详细配置指南 |
-| **Sealos 说明** | [docs/sealos/README.md](../docs/sealos/README.md) | Sealos 配置文件说明 |
-| **完整部署文档** | [docs/SEALOS_DEPLOYMENT.md](../docs/SEALOS_DEPLOYMENT.md) | Sealos 完整部署文档 |
+| **快速指南** | [QUICK_START_EXTERNAL_DB.md](QUICK_START_EXTERNAL_DB.md) | 5 分钟快速部署（外部数据库） |
+| **完整配置** | [EXTERNAL_DB_SETUP.md](EXTERNAL_DB_SETUP.md) | 外部数据库详细配置指南 |
+| **Sealos 说明** | [README.md](README.md) | Sealos 配置文件说明 |
+| **完整部署文档** | [../SEALOS_DEPLOYMENT.md](../SEALOS_DEPLOYMENT.md) | Sealos 完整部署文档 |
 
 ---
 
@@ -46,7 +46,7 @@ kubectl apply -f app-deployment.yaml
 kubectl get pods -n tdd-ma
 ```
 
-**详细步骤**：查看 [快速部署指南](../docs/sealos/QUICK_START_EXTERNAL_DB.md)
+**详细步骤**：查看 [快速部署指南](QUICK_START_EXTERNAL_DB.md)
 
 ---
 
@@ -62,4 +62,4 @@ kubectl get pods -n tdd-ma
 
 - [Sealos 官方文档](https://sealos.io/docs)
 - [Kubernetes 官方文档](https://kubernetes.io/docs)
-- [项目主 README](../README.md)
+- [项目主 README](../../README.md)

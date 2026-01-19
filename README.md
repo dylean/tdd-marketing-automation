@@ -247,7 +247,7 @@ docker-compose logs -f app
 
 访问应用：http://localhost:8080
 
-**文档**：[Docker 部署指南](./README_DOCKER_SETUP.md)
+**文档**：[Docker 部署指南](./docs/DOCKER_QUICK_START.md)
 
 ---
 

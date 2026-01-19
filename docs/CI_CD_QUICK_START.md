@@ -69,9 +69,9 @@ Deploy 工作流会自动触发 🎉
 
 ## 🎓 下一步
 
-- 📖 阅读 [完整配置指南](../docs/CI-CD-SETUP.md)
-- 🔧 自定义工作流: [工作流说明](.github/workflows/README.md)
-- 🐳 Docker 部署: [Dockerfile](../Dockerfile)
+- 📖 阅读 [完整配置指南](CI-CD-SETUP.md)
+- 🔧 自定义工作流: [工作流详细说明](CI_CD_WORKFLOWS.md)
+- 🐳 Docker 部署: [Docker 快速开始](DOCKER_QUICK_START.md)
 
 ---
 

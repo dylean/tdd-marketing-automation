@@ -70,4 +70,4 @@ docker run -d \
 | DB_PASSWORD | 数据库密码 | `your_password` |
 | REDIS_HOST | Redis 地址 | `redis.example.com` |
 
-完整文档: [docs/DOCKER_DEPLOYMENT.md](docs/DOCKER_DEPLOYMENT.md)
+完整文档: [DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md)
